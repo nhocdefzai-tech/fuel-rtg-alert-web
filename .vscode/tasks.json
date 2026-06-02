@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Fuel RTG Web: Setup Env",
+      "type": "shell",
+      "command": ".\\SETUP_ENV.cmd",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Fuel RTG Web: Run",
+      "type": "shell",
+      "command": ".\\RUN_WEB.cmd",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Fuel RTG Web: Tests",
+      "type": "shell",
+      "command": ".\\RUN_TESTS.cmd",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}
