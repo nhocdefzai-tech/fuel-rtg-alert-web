@@ -186,6 +186,14 @@ INDEX_HTML = """
     .status-pill { border-radius:999px; padding:2px 7px; font-weight:600; display:inline-block; }
     .toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .save { min-width:130px; color:var(--muted); }
+    .field-title { display:inline-flex; align-items:center; gap:5px; font-weight:600; }
+    .help { position:relative; display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:999px; border:1px solid var(--line); color:var(--blue); background:#fff; font-size:12px; cursor:help; }
+    .help::after { content:attr(data-tip); position:absolute; left:50%; bottom:125%; transform:translateX(-50%); z-index:10; display:none; min-width:220px; max-width:320px; padding:8px 10px; border-radius:7px; background:#17202a; color:#fff; font-size:12px; font-weight:400; line-height:1.35; box-shadow:0 8px 24px rgba(16,24,40,.18); white-space:normal; }
+    .help:hover::after, .help:focus::after, .help:active::after { display:block; }
+    .legend { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:10px 0 12px; }
+    .legend-item { border:1px solid var(--line); border-radius:8px; padding:8px; display:grid; gap:4px; }
+    .legend-swatch { width:22px; height:12px; border-radius:999px; display:inline-block; margin-right:6px; vertical-align:middle; }
+    .rtg-actions { margin:8px 0; display:flex; gap:8px; flex-wrap:wrap; }
     @media (max-width: 900px) { .grid, .source-grid { grid-template-columns:1fr; } .rtgs { grid-template-columns:repeat(3, 1fr); } }
   </style>
 </head>
@@ -224,8 +232,14 @@ INDEX_HTML = """
       <div id="scheduleList"></div>
     </section>
     <section>
-      <h2>Dashboard</h2>
+      <h2>Dashboard <span class="help" tabindex="0" data-tip="Mau sac the hien muc do canh bao RTG: do la gap, vang la can chu y, xanh la on, xam la thieu du lieu.">?</span></h2>
       <div class="grid" id="kpis"></div>
+      <div class="legend">
+        <div class="legend-item"><div><span class="legend-swatch CRITICAL"></span><b>CRITICAL</b></div><span class="muted">Da bang/duoi nguong 15%, can xu ly gap.</span></div>
+        <div class="legend-item"><div><span class="legend-swatch WARNING"></span><b>WARNING</b></div><span class="muted">Duoi 25% hoac se cham 25% trong 24 gio.</span></div>
+        <div class="legend-item"><div><span class="legend-swatch OK"></span><b>OK</b></div><span class="muted">Chua can do dau gap theo du bao hien tai.</span></div>
+        <div class="legend-item"><div><span class="legend-swatch NO_DATA"></span><b>NO DATA</b></div><span class="muted">Chua co checklist hop le cho RTG.</span></div>
+      </div>
       <p id="runAt" class="muted"></p>
       <h2>Canh bao do dau</h2>
       <table>
@@ -305,6 +319,12 @@ INDEX_HTML = """
       setSave('Deleted');
     }
 
+    function setAllRtgs(id, checked) {
+      const box = document.querySelector(`[data-schedule="${id}"]`);
+      box.querySelectorAll('[name="rtg"]').forEach(item => item.checked = checked);
+      scheduleChanged(id);
+    }
+
     async function runDashboard() {
       setSave('Running...');
       const state = await api('/api/run', {method:'POST'});
@@ -338,16 +358,20 @@ INDEX_HTML = """
       document.getElementById('scheduleList').innerHTML = rows.map(row => `
         <div class="card" data-schedule="${row.id}">
           <div class="grid">
-            <label>Active<br><input name="active" type="checkbox" ${row.active ? 'checked' : ''} onchange="scheduleChanged(${row.id})"></label>
-            <label>Ten tau<br><input name="vessel_name" value="${esc(row.vessel_name)}" oninput="scheduleChanged(${row.id})"></label>
-            <label>Visit code<br><input name="visit_code" value="${esc(row.visit_code)}" oninput="scheduleChanged(${row.id})"></label>
-            <label>Priority<br><input name="priority" type="number" min="1" max="9" value="${row.priority}" oninput="scheduleChanged(${row.id})"></label>
-            <label>ETB<br><input name="etb" type="datetime-local" value="${toInputTime(row.etb)}" oninput="scheduleChanged(${row.id})"></label>
-            <label>ETD<br><input name="etd" type="datetime-local" value="${toInputTime(row.etd)}" oninput="scheduleChanged(${row.id})"></label>
-            <label>Berth area<br><input name="berth_area" value="${esc(row.berth_area)}" oninput="scheduleChanged(${row.id})"></label>
-            <label>Notes<br><input name="notes" value="${esc(row.notes)}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('Active','Bat/tat dong lich tau nay. Tat active thi web khong dung dong nay de uu tien RTG.')}<br><input name="active" type="checkbox" ${row.active ? 'checked' : ''} onchange="scheduleChanged(${row.id})"></label>
+            <label>${help('Ten tau','Ten tau de hien thi tren dashboard va ke hoach do dau.')}<br><input name="vessel_name" value="${esc(row.vessel_name)}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('Visit code','Ma chuyen/tau trong N4, vi du USL614W. Neu co, web lien ket them workload N4.')}<br><input name="visit_code" value="${esc(row.visit_code)}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('Priority','So cang nho cang uu tien cao. 1 la tau gap/quan trong; 3 la mac dinh; 9 la thap.')}<br><input name="priority" type="number" min="1" max="9" value="${row.priority}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('ETB','Thoi gian du kien tau vao/lam hang. RTG duoc chon se duoc uu tien truoc moc nay.')}<br><input name="etb" type="datetime-local" value="${toInputTime(row.etb)}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('ETD','Thoi gian du kien tau roi/ket thuc. Web xem RTG la dang lien quan trong khoang ETB den ETD.')}<br><input name="etd" type="datetime-local" value="${toInputTime(row.etd)}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('Berth area','Khu cau/ben hoac khu vuc lam hang, dung de nguoi van hanh xem lai.')}<br><input name="berth_area" value="${esc(row.berth_area)}" oninput="scheduleChanged(${row.id})"></label>
+            <label>${help('Notes','Ghi chu noi bo, vi du tau gap, doi ETB, block lam hang. Hien chu yeu de xem lai.')}<br><input name="notes" value="${esc(row.notes)}" oninput="scheduleChanged(${row.id})"></label>
           </div>
           <p class="muted">Chon RTG lien quan de dashboard uu tien canh bao theo ETB/ETD.</p>
+          <div class="rtg-actions">
+            <button class="secondary" onclick="setAllRtgs(${row.id}, true)">Chon tat ca RTG</button>
+            <button class="secondary" onclick="setAllRtgs(${row.id}, false)">Bo chon tat ca</button>
+          </div>
           <div class="rtgs">${RTGS.map(rtg => `<label><input name="rtg" type="checkbox" value="${rtg}" ${row.rtgs.includes(rtg) ? 'checked' : ''} onchange="scheduleChanged(${row.id})"> ${rtg}</label>`).join('')}</div>
           <p><button class="danger" onclick="deleteSchedule(${row.id})">Xoa</button></p>
         </div>`).join('');
@@ -359,6 +383,7 @@ INDEX_HTML = """
     }
 
     function pill(status) { return `<span class="status-pill ${status}">${status}</span>`; }
+    function help(label, tip) { return `<span class="field-title">${esc(label)} <span class="help" tabindex="0" data-tip="${esc(tip)}">?</span></span>`; }
     function fmt(value, digits) { return value === null || value === undefined || value === '' ? '' : Number(value).toFixed(digits); }
     function esc(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
     function toInputTime(value) { return value ? String(value).slice(0,16) : ''; }
