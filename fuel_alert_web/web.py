@@ -371,9 +371,10 @@ INDEX_HTML = """
 
 
 def main() -> None:
+    host = os.environ.get("FUEL_ALERT_HOST", "127.0.0.1")
     port = int(os.environ.get("FUEL_ALERT_PORT", "8000"))
     app = create_app()
-    app.run(host="127.0.0.1", port=port, debug=False)
+    app.run(host=host, port=port, debug=False)
 
 
 if __name__ == "__main__":

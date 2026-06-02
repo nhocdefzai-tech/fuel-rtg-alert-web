@@ -43,6 +43,35 @@ Web se mo tai:
 http://127.0.0.1:8000
 ```
 
+## Chay cho dien thoai/may tinh khac trong cung mang
+
+Neu muon dien thoai hoac may tinh cong ty khac truy cap, chay:
+
+```powershell
+.\RUN_WEB_LAN.cmd
+```
+
+Terminal se hien URL dang:
+
+```text
+http://<IP_MAY_TINH>:8000
+```
+
+Vi du:
+
+```text
+http://192.168.1.25:8000
+```
+
+Mo URL do tren dien thoai hoac may tinh khac cung Wi-Fi/LAN.
+
+Luu y:
+
+- May chay app phai dang bat va khong tat terminal.
+- Dien thoai/may khac phai cung mang noi bo.
+- Neu khong truy cap duoc, Windows Firewall co the dang chan port `8000`; can Allow access cho Python/Flask khi Windows hoi.
+- Khong nen mo app nay ra internet public vi hien chua co dang nhap.
+
 ## Cach su dung web
 
 1. Upload `Fuel level .xlsx`.
