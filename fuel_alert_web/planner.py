@@ -67,20 +67,49 @@ def build_refuel_plan(
 
 
 def select_active_mappings(mappings: list[RtgMapping], now: datetime, buffer_hours: float) -> dict[str, RtgMapping]:
-    selected: dict[str, tuple[float, RtgMapping]] = {}
+    selected: dict[str, tuple[tuple[float, ...], RtgMapping]] = {}
     buffer = timedelta(hours=buffer_hours)
     for mapping in mappings:
-        active_from = mapping.active_from - buffer if mapping.active_from else None
-        active_to = mapping.active_to + buffer if mapping.active_to else None
-        if active_from and now < active_from:
+        score = mapping_selection_score(mapping, now, buffer)
+        if score is None:
             continue
-        if active_to and now > active_to:
-            continue
-        score = -mapping.priority_weight
         current = selected.get(mapping.rtg)
         if current is None or score < current[0]:
             selected[mapping.rtg] = (score, mapping)
     return {rtg: item[1] for rtg, item in selected.items()}
+
+
+def mapping_selection_score(mapping: RtgMapping, now: datetime, buffer: timedelta) -> tuple[float, ...] | None:
+    active_from = mapping.active_from
+    active_to = mapping.active_to
+    buffered_from = active_from - buffer if active_from else None
+    buffered_to = active_to + buffer if active_to else None
+
+    if buffered_from and now < buffered_from:
+        return None
+    if buffered_to and now > buffered_to:
+        return None
+
+    phase_rank = 3
+    minutes_from_window = 999999.0
+    if active_from and active_to and active_from <= now <= active_to:
+        phase_rank = 0
+        minutes_from_window = 0.0
+    elif active_from and not active_to and now >= active_from:
+        phase_rank = 0
+        minutes_from_window = 0.0
+    elif active_to and not active_from and now <= active_to:
+        phase_rank = 0
+        minutes_from_window = 0.0
+    elif active_from and now < active_from:
+        phase_rank = 1
+        minutes_from_window = (active_from - now).total_seconds() / 60
+    elif active_to and now > active_to:
+        phase_rank = 2
+        minutes_from_window = (now - active_to).total_seconds() / 60
+
+    etd_sort = active_to.timestamp() if active_to else 9999999999.0
+    return (phase_rank, -mapping.priority_weight, minutes_from_window, etd_sort)
 
 
 def priority_key(row: ForecastRow, schedule: VesselSchedule | None, workload: int, now: datetime) -> tuple[float, ...]:
